@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="sq" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <script>
+    (function () {
+      var stored = null;
+      try {
+        stored = localStorage.getItem("pagacalcTheme");
+      } catch (_) {}
+      var theme =
+        stored === "light" || stored === "dark"
+          ? stored
+          : window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PagëCalc — Kalkulator i Pagës për Shqipëri</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div class="page-bg" aria-hidden="true"></div>
+
+  <main class="site-main">
+    <header class="site-header">
+      <h1>Kalkulator i Pagës Shqiptare</h1>
+      <fieldset class="theme-fieldset">
+        <legend class="visually-hidden">Tema e ngjyrave</legend>
+        <div class="theme-switch" role="presentation">
+          <label class="theme-option">
+            <input type="radio" name="theme" value="light" />
+            <span class="theme-option-label">E çelët</span>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="theme" value="dark" />
+            <span class="theme-option-label">E errët</span>
+          </label>
+        </div>
+      </fieldset>
+    </header>
+
+    <p class="intro">
+      Llogarit pagën <strong>bruto</strong> dhe <strong>neto</strong> sipas rregullave tatimore në Shqipëri — TAP, sigurime shoqërore dhe shëndetësore.
+    </p>
+
+    <div class="wrap main">
+
+      <section class="panel panel--input">
+        <div class="panel__head">
+          <h2>Të dhënat</h2>
+          <p>Vendos shumën dhe zgjidh periudhën tatimore.</p>
+        </div>
+
+        <div class="controls-row">
+          <div class="field">
+            <span class="field__label">Lloji i pagës</span>
+            <div class="pill-group">
+              <button class="type-btn pill active" data-type="gross">Bruto</button>
+              <button class="type-btn pill" data-type="net">Neto</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field__label">Periudha tatimore</span>
+            <div class="pill-group pill-group--wide">
+              <button class="period-btn pill" data-period="before">Deri 1 Jan 2026</button>
+              <button class="period-btn pill active" data-period="after">Pas 1 Jan 2026</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="inputs-row">
+          <div class="field">
+            <label class="field__label" for="salary">Paga mujore</label>
+            <div class="input-shell">
+              <input type="number" id="salary" value="0" min="0" step="any" placeholder="0" />
+              <span class="input-shell__suffix">LEK</span>
+            </div>
+          </div>
+
+          <div class="field field--work-days">
+            <label class="field__label" for="workDays">Ditë pune</label>
+            <div class="input-shell input-shell--work-days">
+              <input type="number" id="workDays" value="22" min="0" max="31" step="1" />
+              <span class="input-shell__suffix">/ muaj</span>
+            </div>
+          </div>
+        </div>
+
+        <label class="toggle-card">
+          <input type="checkbox" id="enableSickDays" />
+          <span class="toggle-card__box"></span>
+          <span class="toggle-card__text">
+            <strong>Ditët sëmurë</strong>
+            <small>Përfshi zbritjen nga ditët me pagesë të reduktuar</small>
+          </span>
+        </label>
+
+        <div class="sick-panel hidden" id="sickSection">
+          <div class="sick-panel__grid">
+            <div class="field">
+              <label class="field__label" for="sickDays">Ditët sëmurë</label>
+              <input class="input-plain" type="number" id="sickDays" value="0" min="0" max="22" step="1" />
+            </div>
+
+            <div class="field">
+              <label class="field__label" for="sickPercent">Pagesë në sëmundje</label>
+              <div class="input-shell input-shell--sick">
+                <input type="number" id="sickPercent" value="70" min="0" max="100" step="1" />
+                <span class="input-shell__suffix">%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="sick-panel__stat">
+            <span>Ditë sëmurë në muaj</span>
+            <strong id="sickRatio">0%</strong>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="calculateBtn" type="button">
+          Llogarit pagën
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </section>
+
+      <section class="panel panel--results hidden" id="resultsCard">
+        <div class="panel__head">
+          <h2>Rezultati</h2>
+          <p>Detajet e llogaritjes dhe kostoja për punëdhënësin.</p>
+        </div>
+
+        <div class="result-block">
+          <div class="result-row result-row--hero">
+            <span>Paga bruto (fillestare)</span>
+            <strong id="initialGross">—</strong>
+          </div>
+
+          <div class="result-row result-row--warn hidden" id="sickDeductionRow">
+            <div>
+              <span>Zbritje ditët sëmurë</span>
+              <small id="sickFormula"></small>
+            </div>
+            <strong id="sickDeduction">—</strong>
+          </div>
+
+          <div class="result-row result-row--accent hidden" id="grossAfterSickRow">
+            <span>Paga bruto (pas sëmundjes)</span>
+            <strong id="grossAfterSick">—</strong>
+          </div>
+        </div>
+
+        <p class="result-section-label">Ndaljet e punëmarrësit</p>
+
+        <div class="result-block">
+          <div class="result-row">
+            <div>
+              <span>Sigurime shoqërore</span>
+              <small>9.5%</small>
+            </div>
+            <strong class="minus" id="employeeSocial">—</strong>
+          </div>
+
+          <div class="result-row">
+            <div>
+              <span>Sigurime shëndetësore</span>
+              <small>1.7%</small>
+            </div>
+            <strong class="minus" id="employeeHealth">—</strong>
+          </div>
+
+          <div class="result-row">
+            <span>TAP</span>
+            <strong class="minus" id="tap">—</strong>
+          </div>
+        </div>
+
+        <div class="net-highlight">
+          <span>Paga neto</span>
+          <strong id="netSalary">—</strong>
+        </div>
+
+        <p class="result-section-label">Kosto punëdhënësi</p>
+
+        <div class="result-block">
+          <div class="result-row">
+            <span>Paga bruto</span>
+            <strong id="employerGross">—</strong>
+          </div>
+
+          <div class="result-row">
+            <div>
+              <span>Sigurime shoqërore</span>
+              <small>15%</small>
+            </div>
+            <strong class="plus" id="employerSocial">—</strong>
+          </div>
+
+          <div class="result-row">
+            <div>
+              <span>Sigurime shëndetësore</span>
+              <small>1.7%</small>
+            </div>
+            <strong class="plus" id="employerHealth">—</strong>
+          </div>
+        </div>
+
+        <div class="total-highlight">
+          <span>Kosto totale</span>
+          <strong id="totalCost">—</strong>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p class="site-footer-disclaimer">
+      Projekt personal për qëllime edukative. Kontrollo gjithmonë me një profesionist tatimor.
+    </p>
+    <p class="site-footer-copy">
+      <span class="site-footer-copy-inner">
+        <span class="site-footer-crumb">
+          © <span id="footer-year">2026</span>
+        </span>
+        <span class="site-footer-crumb">
+          <span class="site-footer-sep" aria-hidden="true">|</span>
+          <a
+            class="site-footer-author"
+            href="https://github.com/ktamburi"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Klaudia Tamburi në GitHub"
+          >Klaudia Tamburi</a>
+        </span>
+      </span>
+    </p>
+    <nav class="site-footer-social" aria-label="Lidhje sociale">
+      <a
+        class="site-footer-icon"
+        href="https://www.linkedin.com/in/klaudiatamburi/"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="LinkedIn"
+      >
+        <img src="icons/social-linkedin.svg" width="22" height="22" alt="" decoding="async" />
+      </a>
+      <a
+        class="site-footer-icon"
+        href="https://github.com/ktamburi"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="GitHub"
+      >
+        <img src="icons/social-github.svg" width="22" height="22" alt="" decoding="async" />
+      </a>
+      <a
+        class="site-footer-icon"
+        href="https://www.instagram.com/prettybluesoul/"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Instagram"
+      >
+        <img src="icons/social-instagram.svg" width="22" height="22" alt="" decoding="async" />
+      </a>
+    </nav>
+  </footer>
+
+  <script src="calculator.js"></script>
+</body>
+</html>
