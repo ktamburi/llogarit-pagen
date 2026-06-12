@@ -420,7 +420,9 @@ function renderSalaryCalculation() {
   resultFields.employeeSocial.textContent = `− ${formatCurrency(payroll.employeeSocial)}`;
   resultFields.employeeHealth.textContent = `− ${formatCurrency(payroll.employeeHealth)}`;
   resultFields.tap.textContent = `− ${formatCurrency(payroll.tap)}`;
-  resultFields.netSalary.textContent = formatCurrency(payroll.netSalary);
+  resultFields.netSalary.textContent = formatCurrency(
+    activeSalaryType === "net" ? monthlyAmount : payroll.netSalary
+  );
   resultFields.employerGross.textContent = formatCurrency(payroll.grossAfterSick);
   resultFields.employerSocial.textContent = `+ ${formatCurrency(payroll.employerSocial)}`;
   resultFields.employerHealth.textContent = `+ ${formatCurrency(payroll.employerHealth)}`;
